@@ -1,0 +1,23 @@
+development:
+  adapter: postgresql
+  encoding: unicode
+  database: viral_crawler_development
+  pool: 5
+  username: viral_crawler
+  password:
+
+test:
+  adapter: postgresql
+  encoding: unicode
+  database: viral_crawler_test
+  pool: 5
+  username: viral_crawler
+  password:
+
+production:
+  adapter: postgresql
+  encoding: unicode
+  database: viral_crawler_production
+  pool: 5
+  username: viral_crawler
+  password:
