@@ -1,6 +1,6 @@
 class Article < ActiveRecord::Base
-  has_attached_file :thumbnail
+  has_attached_file :thumbnail, :styles => { :small => "80x80>" }
 
   validates_uniqueness_of :url
-  validates_attachment_content_type :thumbnail, :content_type => %w(image/jpeg image/jpg image/png)
+  validates_attachment_content_type :thumbnail, :content_type => /.*/
 end

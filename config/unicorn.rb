@@ -10,6 +10,11 @@ before_fork do |server, worker|
 
   defined?(ActiveRecord::Base) and
     ActiveRecord::Base.connection.disconnect!
+
+  if defined?(ActiveRecord::Base)
+    ActiveRecord::Base.connection.disconnect!
+  end
+
 end
 
 after_fork do |server, worker|
@@ -19,4 +24,11 @@ after_fork do |server, worker|
 
   defined?(ActiveRecord::Base) and
     ActiveRecord::Base.establish_connection
+
+  if defined?(ActiveRecord::Base)
+    config = ActiveRecord::Base.configurations[Rails.env]
+    config['reaping_frequency'] = ENV['DB_REAP_FREQ'] || 10 # seconds
+    config['pool']              = ENV['DB_POOL'] || 20
+    ActiveRecord::Base.establish_connection(config)
+  end
 end

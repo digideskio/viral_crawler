@@ -3,17 +3,17 @@ class ViralnovaWorker
 
   def perform (image_link, article_id)
     article = Article.find(article_id)
-    Logger.new(STDOUT).info '[Article] Saving article content...'
+    Logger.new(STDOUT).info '[Viralnova Worker] Saving article content...'
     thumbnail = URI.parse(image_link)
     article.thumbnail = thumbnail
     article.content = content(article)
     if article.save!
-      Logger.new(STDOUT).info '[Article] Save complete.'
-      send_article article
+      Logger.new(STDOUT).info '[Viralnova Worker] Save complete.'
+      Crawler.send_article article
     end
   end
 
-    def content (article)
+  def content (article)
     agent = Mechanize.new
     article_page = agent.get article.url
 
@@ -37,7 +37,7 @@ class ViralnovaWorker
                     img = item.search('.gallery-icon img')[0]
                     img.remove_attribute 'height'
                     img.remove_attribute 'width'
-                    img.set_attribute('src', ViralnovaWorker.save_to_s3(img['src']))
+                    img.set_attribute('src', Crawler.save_to_s3(img['src']))
                     doc.text img.to_html
                   }
                   doc.div.caption {
@@ -56,36 +56,6 @@ class ViralnovaWorker
     end
 
     HTMLEntities.new.decode(builder.to_html)
-  end
-
-  def send_article (article)
-    params = { thumbnail_url: ViralnovaWorker.create_link(article.thumbnail.path),
-      original_url: article.url,
-      original_content: article.content,
-      original_description: article.description,
-      original_title: article.title
-    }
-    RestClient.post 'http://www.sharesthebest.com/create_blog', article: params
-  end
-
-  def self.save_to_s3 (src)
-    filename = src.split('/').last
-    image = MiniMagick::Image.open(src)
-    s3 = AWS::S3.new
-    bucket = s3.buckets[ENV['S3_BUCKET_NAME']]
-    path = create_path(filename)
-    obj = bucket.objects[path]
-    obj.write(Pathname.new(image.path))
-
-    create_link(path)
-  end
-
-  def self.create_path (filename)
-    "images/#{rand(99)}/#{rand(99)}/#{filename}"
-  end
-
-  def self.create_link (path)
-    "http://#{ENV['S3_BUCKET_NAME']}.s3.amazonaws.com/" + path
   end
 
 end

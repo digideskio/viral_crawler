@@ -1,10 +1,10 @@
 class Crawlers::Viralnova
 
   def self.crawl
-    Logger.new(STDOUT).info 'Crawling VIRALNOVA...'
+    Logger.new(STDOUT).info '[Viralnova] Crawling...'
     agent = Mechanize.new
-    viralnova = agent.get 'http://www.viralnova.com/'
-    links = viralnova.search('ul.advanced-recent-posts li')
+    page = agent.get 'http://www.viralnova.com/'
+    links = page.search('ul.advanced-recent-posts li')
 
     send_error if links.blank?
 
@@ -24,12 +24,11 @@ class Crawlers::Viralnova
       end
     end
 
-    Logger.new(STDOUT).info 'Completed.'
+    Logger.new(STDOUT).info '[Viralnova] Completed.'
   end
 
   def self.send_error
-    Logger.new(STDOUT).error 'No links found...'
-
+    Logger.new(STDOUT).error '[Viralnova] No links found...'
   end
 
 end

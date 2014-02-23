@@ -1,28 +1,33 @@
-class Crawlers::Viralnova
+class Crawlers::Distractify
 
-  def self.crawlagent = Mechanize.new
-    page = agent.get('http://distractify.com/')
-    # .sidebar-post a, .sidebar-post img
-    # .featured-post a .featured-img img
-    # .img-container a img
-    articles = []
-    links = page.search('.img-container a, .featured-post a, .top-posts a')
+  def self.crawl
+    Logger.new(STDOUT).info '[Distractify] Crawling...'
+    agent = Mechanize.new
+    page = agent.get 'http://distractify.com/'
+    links = page.search('.img-container a, #sidebar1 .featured-post a, .top-posts a')
 
-    # links.each do |l|
-    #   url = l.attributes['href'].value
-    #   thumbnail_url = l.search('img')[0]['src']
-    #   articles << {url: url, thumbnail: thumbnail_url}
-    # end
+    send_error if links.blank?
 
-    content = agent.click(links.first)
-    main = content.search('section.active-tab .list-post')
-    main.css('img').each do |img|
-      # save img['src']
+    links.each do |l|
+      url = l.attributes['href'].value
 
-      img.set_attribute('src', 'DAMIEN SRC')
+      article_page = agent.click(l)
+      description = article_page.at('meta[@property="og:description"]')[:content]
+      title = article_page.search('h1').inner_text
+
+      article = Article.new(url: url, description: description, title: title)
+
+      if article.save
+        image_link = l.search('img')[0]['src']
+        DistractifyWorker.perform_async(image_link, article.id)
+      end
     end
 
-    p main.inner_html
+    Logger.new(STDOUT).info '[Distractify] Completed.'
   end
 
+  def self.send_error
+    Logger.new(STDOUT).error '[Distractify] No links found...'
+  end
 end
+
